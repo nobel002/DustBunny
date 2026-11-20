@@ -1,27 +1,34 @@
+import sys
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-data = pd.read_csv("Q_Latice.csv", sep="\t", header=None)
-t = data[0].to_numpy()
-xs = data[1:10].to_numpy()
-ys = data[10:].to_numpy()
+# Usage: python Vis/lattice.py [path/to/Q_Latice.csv]
+path = sys.argv[1] if len(sys.argv) > 1 else "Q_Latice.csv"
+data = pd.read_csv(path, sep="\t")
 
+t = data["t"].to_numpy()
+
+# Only qx/qy are written as data columns; select them by name.
+x_cols = sorted((c for c in data.columns if c.startswith("qx")), key=lambda c: int(c[2:]))
+n = len(x_cols)
+xs = data[x_cols].to_numpy()                                # shape (frames, n)
+ys = data[[f"qy{i}" for i in range(1, n + 1)]].to_numpy()   # shape (frames, n)
 
 fig, ax = plt.subplots(figsize=(8, 8))
 
 ax.set_title("Trajectory in Configuration Space")
 ax.set_xlabel(r"$q_x$")
 ax.set_ylabel(r"$q_y$")
-
+ax.set_aspect("equal")
 ax.minorticks_on()
-ax.grid(False)  # IMPORTANT: disable for speed
+ax.grid(False)  # disabled for speed
 
 # ----------------------------
 # stable axis limits
-# ----------------------------)
-
+# ----------------------------
 xmin, xmax = np.min(xs), np.max(xs)
 ymin, ymax = np.min(ys), np.max(ys)
 
@@ -32,44 +39,29 @@ ax.set_xlim(xmin - xpad, xmax + xpad)
 ax.set_ylim(ymin - ypad, ymax + ypad)
 
 # ----------------------------
-# STRIDE DOWNSAMPLING (key speedup)
+# faint full paths + moving points
 # ----------------------------
-stride = 100  # increase if still slow (e.g. 500, 1000)
+for k in range(n):
+    ax.plot(xs[:, k], ys[:, k], "-", color=f"C{k % 10}", lw=0.8, alpha=0.3)
 
-frames = np.arange(0, len(t), stride)
-
-# ----------------------------
-# scatter-like points (NO TRAILS)
-# ----------------------------
-
-ps = []
-for set in range(len(xs)):
-    ps.append(ax.plot([], [], ".", color="C0", markersize=8, label=set))
-
+points = ax.scatter(xs[0], ys[0], c=[f"C{k % 10}" for k in range(n)], s=60, zorder=3)
 time_text = ax.text(0.02, 0.98, "", transform=ax.transAxes, va="top")
 
-ax.legend()
-
 # ----------------------------
-# update function (constant time)
+# stride downsampling (speedup)
 # ----------------------------
-def update(i):
-    i = frames[i]
-    for idx, p in enumerate(ps):
-        p[0].set_data([xs[idx]], [ys[idx]])  # p[0] not p[i], idx not i
+stride = 10  # increase if the animation is slow
+frames = np.arange(0, len(t), stride)
 
+
+def update(frame):
+    i = frames[frame]
+    points.set_offsets(np.column_stack([xs[i], ys[i]]))
     time_text.set_text(f"t = {t[i]:.3e}")
+    return points, time_text
 
-    return [p[0] for p in ps] + [time_text]  # flat list of artists
-    return ps, time_text
 
-ani = FuncAnimation(
-    fig,
-    update,
-    frames=len(frames),
-    interval=10,
-    blit=True
-)
+ani = FuncAnimation(fig, update, frames=len(frames), interval=10, blit=True)
 
 plt.tight_layout()
 plt.show()

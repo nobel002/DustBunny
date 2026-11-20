@@ -104,11 +104,12 @@ Output is downsampled to one row every 250 steps.
 ### 📊 Visualise
 
 ```bash
-pip install numpy pandas matplotlib jupyter
-jupyter notebook Vis/Visualisers.ipynb
+pip install numpy pandas matplotlib
+python Vis/lattice.py              # animate the N-particle lattice (reads Q_Latice.csv)
+python Vis/lattice.py path/to.csv  # or point it at any output file
 ```
 
-The `Vis/` folder also has standalone scripts for trajectory animations and energy comparisons. They are experimental and may need their CSV paths adjusted.
+You can also open **`Vis/Visualisers.ipynb`** to explore the data interactively. The other scripts in `Vis/` are older experiments from the 3‑body runs.
 
 ---
 
