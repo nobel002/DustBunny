@@ -1,0 +1,16 @@
+# Rust build output
+/target/
+
+# Python
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# IDE / tooling
+.idea/
+.ai/
+
+# Generated simulation output
+/Out/
+/*.csv
+flamegraph.svg
